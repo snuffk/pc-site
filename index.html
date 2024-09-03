@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Your PC</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+        }
+        .part-selection {
+            margin-bottom: 20px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+        }
+        .part-details {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .total-cost, .build-summary {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+        .build-summary {
+            background-color: #e9e9e9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const parts = {
+            cpu: [
+                { name: "Intel Core i5-11600K", price: 269.99, details: "6 cores, 12 threads, 3.9GHz base clock, 4.9GHz boost clock, 12MB cache, 125W TDP, Socket LGA1200", socket: "LGA1200", type: "Intel" },
+                { name: "AMD Ryzen 5 5600X", price: 299.99, details: "6 cores, 12 threads, 3.7GHz base clock, 4.6GHz boost clock, 35MB cache, 65W TDP, Socket AM4", socket: "AM4", type: "AMD" },
+                { name: "Intel Core i7-11700K", price: 399.99, details: "8 cores, 16 threads, 3.6GHz base clock, 5.0GHz boost clock, 16MB cache, 125W TDP, Socket LGA1200", socket: "LGA1200", type: "Intel" }
+            ],
+            motherboard: [
+                { name: "ASUS ROG Strix B550-F", price: 189.99, details: "ATX, AMD B550 chipset, 4 DIMM slots (up to 128GB DDR4), PCIe 4.0, M.2 support", socket: "AM4", type: "AMD" },
+                { name: "MSI MPG Z590 Gaming Edge", price: 229.99, details: "ATX, Intel Z590 chipset, 4 DIMM slots (up to 128GB DDR4), PCIe 4.0, M.2 support", socket: "LGA1200", type: "Intel" },
+                { name: "Gigabyte B450 AORUS PRO", price: 109.99, details: "ATX, AMD B450 chipset, 4 DIMM slots (up to 128GB DDR4), PCIe 3.0, M.2 support", socket: "AM4", type: "AMD" }
+            ],
+            ram: [
+                { name: "Corsair Vengeance LPX 16GB", price: 89.99, details: "2x8GB, DDR4-3200, CL16, 1.35V, low-profile heat spreader" },
+                { name: "G.Skill Ripjaws V 32GB", price: 159.99, details: "2x16GB, DDR4-3600, CL16, 1.35V, aluminum heat spreader" },
+                { name: "Crucial Ballistix 16GB", price: 79.99, details: "2x8GB, DDR4-3000, CL15, 1.35V, integrated heat spreader" }
+            ],
+            gpu: [
+                { name: "NVIDIA GeForce RTX 3060", price: 329.99, details: "12GB GDDR6, 1777MHz boost clock, 3584 CUDA cores, 170W TDP, PCIe 4.0" },
+                { name: "AMD Radeon RX 6700 XT", price: 479.99, details: "12GB GDDR6, 2581MHz boost clock, 2560 stream processors, 230W TDP, PCIe 4.0" },
+                { name: "NVIDIA GeForce RTX 3070", price: 499.99, details: "8GB GDDR6, 1725MHz boost clock, 5888 CUDA cores, 220W TDP, PCIe 4.0" }
+            ],
+            storage: [
+                { name: "Samsung 970 EVO Plus 500GB", price: 79.99, details: "NVMe SSD, 3500MB/s read, 3200MB/s write, PCIe 3.0 x4, M.2 2280" },
+                { name: "Crucial MX500 1TB", price: 114.99, details: "SATA SSD, 560MB/s read, 510MB/s write, 2.5 inch form factor" },
+                { name: "WD Black 2TB", price: 89.99, details: "HDD, 7200RPM, 64MB cache, 3.5 inch form factor" }
+            ],
+            psu: [
+                { name: "Corsair RM750x", price: 129.99, details: "750W, 80+ Gold certified, fully modular, 135mm fan, 10-year warranty" },
+                { name: "EVGA SuperNOVA 650 GA", price: 99.99, details: "650W, 80+ Gold certified, fully modular, 135mm fan, 10-year warranty" },
+                { name: "Seasonic FOCUS GX-550", price: 89.99, details: "550W, 80+ Gold certified, fully modular, 120mm fan, 10-year warranty" }
+            ]
+        };
+
+        function PCBuilder() {
+            const [selectedParts, setSelectedParts] = React.useState({});
+            const [error, setError] = React.useState('');
+
+            const isCompatible = (category, part) => {
+                if (category === 'cpu' || category === 'motherboard') {
+                    const otherCategory = category === 'cpu' ? 'motherboard' : 'cpu';
+                    const otherPart = selectedParts[otherCategory];
+                    if (otherPart) {
+                        return part.socket === otherPart.socket && part.type === otherPart.type;
+                    }
+                }
+                return true;
+            };
+
+            const handlePartSelection = (category, part) => {
+                if (isCompatible(category, part)) {
+                    setSelectedParts(prev => ({...prev, [category]: part}));
+                    setError('');
+                } else {
+                    setError(`This ${category} is not compatible with your current build.`);
+                }
+            };
+
+            const calculateTotalCost = () => {
+                return Object.values(selectedParts).reduce((total, part) => total + part.price, 0).toFixed(2);
+            };
+
+            const getBuildSummary = () => {
+                if (Object.keys(selectedParts).length === 6) {
+                    return (
+                        <div className="build-summary">
+                            <h2>Build Summary</h2>
+                            {Object.entries(selectedParts).map(([category, part]) => (
+                                <p key={category}><strong>{category.toUpperCase()}:</strong> {part.name}</p>
+                            ))}
+                            <p><strong>Total Cost:</strong> ${calculateTotalCost()}</p>
+                        </div>
+                    );
+                }
+                return null;
+            };
+
+            return (
+                <div className="container">
+                    <h1>Build Your PC</h1>
+                    {error && <p className="error">{error}</p>}
+                    {Object.entries(parts).map(([category, options]) => (
+                        <div key={category} className="part-selection">
+                            <h2>{category.charAt(0).toUpperCase() + category.slice(1)}</h2>
+                            <select onChange={(e) => handlePartSelection(category, JSON.parse(e.target.value))}>
+                                <option value="">Select a {category}</option>
+                                {options.map((part, index) => (
+                                    <option key={index} value={JSON.stringify(part)} disabled={!isCompatible(category, part)}>
+                                        {part.name} - ${part.price}
+                                    </option>
+                                ))}
+                            </select>
+                            {selectedParts[category] && (
+                                <div className="part-details">
+                                    <p><strong>Selected:</strong> {selectedParts[category].name}</p>
+                                    <p><strong>Price:</strong> ${selectedParts[category].price}</p>
+                                    <p><strong>Details:</strong> {selectedParts[category].details}</p>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    <div className="total-cost">
+                        Total Cost: ${calculateTotalCost()}
+                    </div>
+                    {getBuildSummary()}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<PCBuilder />, document.getElementById('root'));
+    </script>
+</body>
+</html>
